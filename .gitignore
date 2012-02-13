@@ -1,6 +1,8 @@
 tztk/players.txt
 tztk/snapshots
+tztk/motd
 minecraft_server.jar
+ops.txt
 server.log*
 world
 Minecraft-Overviewer
