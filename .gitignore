@@ -1,7 +1,8 @@
-tztk/players.txt
-tztk/snapshots
-tztk/motd
+Minecraft-Overviewer
 minecraft_server.jar
 server.log*
+tztk/motd
+tztk/players.txt
+tztk/snapshots
+white-list.txt
 world*
-Minecraft-Overviewer
