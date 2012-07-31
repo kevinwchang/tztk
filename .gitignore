@@ -1,8 +1,11 @@
-Minecraft-Overviewer
-minecraft_server.jar
-server.log*
+Minecraft-Overviewer/
 tztk/motd
 tztk/players.txt
 tztk/snapshots
+debug/
+world*/
+minecraft_server.jar
+server.log*
+banned-ips.txt
+banned-players.txt
 white-list.txt
-world*
