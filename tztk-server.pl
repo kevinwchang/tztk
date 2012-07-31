@@ -270,8 +270,8 @@ while (kill 0 => $server_pid) {
           print PLAYERS map{"$_\n"} @players;
           close PLAYERS;
         # snapshot save-complete trigger
-        # CONSOLE: Save complete.
-        } elsif ($mc =~ /^CONSOLE\:\s*Save\s+complete\.\s*$/) {
+        # Saved the world
+        } elsif ($mc =~ /^Saved\s+the\s+world\s*$/) {
           if ($want_snapshot) {
             $want_snapshot = 0;
             snapshot_finish();
