@@ -17,7 +17,7 @@ use Encode;
 
 my $protocol_version = 0x16;
 my $client_version = 99;
-my $server_memory = "1024M";
+my $server_memory = "926m";
 
 # client init
 my %packet; %packet = (
@@ -156,7 +156,8 @@ while (kill 0 => $server_pid) {
 
         # init messages
         # Done! For help, type "help" or "?"
-        if ($mc =~ /^Done(?:\s*\(\w+\))?\!\s*For\s+help\,\s*type\b/) {
+        # Done (1.174s)! For help, type "help" or "?"
+        if ($mc =~ /^Done(?:\s*\([\w\.]+\))?\!\s*For\s+help\,\s*type\b/) {
           $server_ready = 1;
           console_exec('list');
         # chat messages
@@ -164,7 +165,7 @@ while (kill 0 => $server_pid) {
         } elsif ($mc =~ /^\<([\w\-]+)\>\s*(.+?)\s*$/) {
           my ($username, $msg) = ($1, $2);
 
-          if ($msg =~ /^\-([\w\-]+)(?:\s+(.+?))?\s*$/) {
+          if ($msg =~ /^\-([a-z][\w\-]*)(?:\s+(.+?))?\s*$/i) {
             ($cmd_user, $cmd_name, $cmd_args) = ($username, $1, $2);
           } else {
             irc_send($irc, "<$username> $msg") if $irc;
@@ -189,7 +190,7 @@ while (kill 0 => $server_pid) {
               $whitelist_passed = 1 if -e "$tztk_dir/whitelisted-players/$username";
             }
             if ($whitelist_active && !$whitelist_passed) {
-              console_exec(kick => $username);
+              console_exec(kick => $username, "You are not on the whitelist; talk to the server admin.");
               console_exec(say => "$username tried to join, but was not on any active whitelist");
               next;
             }
@@ -271,7 +272,7 @@ while (kill 0 => $server_pid) {
           close PLAYERS;
         # snapshot save-complete trigger
         # CONSOLE: Save complete.
-        } elsif ($mc =~ /^CONSOLE\:\s*Save\s+complete\.\s*$/) {
+        } elsif ($mc =~ /^(?:CONSOLE\:\s*Save\s+complete\.|Saved\s+the\s+world)\s*$/) {
           if ($want_snapshot) {
             $want_snapshot = 0;
             snapshot_finish();
