@@ -120,6 +120,7 @@ print "Minecraft SMP Server launched with pid $server_pid\n";
 my (@players, %payments_pending, $want_list);
 my $server_ready = 0;
 my $want_snapshot = 0;
+my $expect_userlist = 0;
 
 my $sel = new IO::Select(\*MCOUT, \*STDIN);
 $sel->add($irc->{socket}) if $irc;
@@ -148,7 +149,7 @@ while (kill 0 => $server_pid) {
         # 2010-09-23 18:36:53 [INFO]
         ($msgprefix, $msgtype) = ($1, lc $2) if $mc =~ s/^([\d\-\s\:]*\[(\w+)\]\s*)//;
         $msgprefix = strftime('%F %T [MISC] ', localtime) unless length $msgprefix;
-        $mc =~ s/\xc2\xa7[0-9a-f]//g; #remove color codes
+        $mc =~ s/\xc2\xa7.//gs; #remove color codes
         $msgtype = 'chat' if $msgtype eq 'info' && $mc =~ /^\<[\w\-]+\>\s+[^\-]/;
         print color($msgtype => $msgprefix.$mc);
 
@@ -254,14 +255,13 @@ while (kill 0 => $server_pid) {
             delete $payments_pending{$username};
           }
           console_exec('list');
-        # player counts
-        # Player count: 0
-        } elsif ($mc =~ /^Player\s+count\:\s*(\d+)\s*$/) {
-          # players.txt upkeep
-          console_exec('list');
         # userlist players.txt update
-        # Connected players: Topaz2078
-        } elsif ($mc =~ /^Connected\s+players\:\s*(.*?)\s*$/) {
+        # There are 2/20 players online:
+        # user1, user2
+        } elsif ($mc =~ /^There\s+are\s+\d+\/\d+\s+players\s+online\:\s*$/) {
+          $expect_userlist = 1;
+        } elsif ($expect_userlist && $mc =~ /^((?:[\w\-]+(?:\,\s*[\w\-]+)*)?)$/) {
+          $expect_userlist = 0;
           @players = grep {/^[\w\-]+$/ && player_is_human($_)} split(/[^\w\-]+/, $1);
           if (defined $want_list) {
             console_exec(tell => $want_list => "Connected players: " . join(', ', @players));
