@@ -17,7 +17,7 @@ use Encode;
 
 my $protocol_version = 0x16;
 my $client_version = 99;
-my $server_memory = "926m";
+my $server_memory = "1536m";
 
 # client init
 my %packet; %packet = (
@@ -63,7 +63,7 @@ my %packet; %packet = (
 my $tztk_dir = cat("tztk-dir") || "tztk";
 my $cmddir = "$tztk_dir/allowed-commands";
 my $snapshotdir = "$tztk_dir/snapshots";
-my %msgcolor = (info => 36, warning => 33, error => 31, tztk => 32, chat => 35);
+my %msgcolor = (info => 36, misc => 36, warning => 33, error => 31, tztk => 32, chat => 35);
 
 $|=1;
 my $ua = new LWP::UserAgent; $ua->agent("tztk");
@@ -113,7 +113,7 @@ if (-d "$tztk_dir/irc") {
 # start minecraft server
 my $server_pid = 0;
 $SIG{PIPE} = sub { print color(error => "SIGPIPE (\$?=$?, k0=".(kill 0 => $server_pid).", \$!=$!)\n"); };
-$server_pid = open2(\*MCOUT, \*MCIN, "java -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
+$server_pid = open2(\*MCOUT, \*MCIN, "java -Xincgc -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
 MCOUT->blocking(0);
 print "Minecraft SMP Server launched with pid $server_pid\n";
 
@@ -147,7 +147,8 @@ while (kill 0 => $server_pid) {
       while (my $mc = <MCOUT>) {
         my ($msgprefix, $msgtype) = ("", "");
         # 2010-09-23 18:36:53 [INFO]
-        ($msgprefix, $msgtype) = ($1, lc $2) if $mc =~ s/^([\d\-\s\:]*\[(\w+)\]\s*)//;
+        # [16:13:47] [Server Shutdown Thread/INFO]: Saving players
+        ($msgprefix, $msgtype) = ($1, lc $2) if $mc =~ s/^(\[[\d\:]+\]\s+\[[^\/]+\/(\w+)\]\:\s*)//;
         $msgprefix = strftime('%F %T [MISC] ', localtime) unless length $msgprefix;
         $mc =~ s/\xc2\xa7.//gs; #remove color codes
         $msgtype = 'chat' if $msgtype eq 'info' && $mc =~ /^\<[\w\-]+\>\s+[^\-]/;
@@ -173,7 +174,7 @@ while (kill 0 => $server_pid) {
           }
         # whispers
         # 2011-01-08 21:24:10 [INFO] Topaz2078 whispers asdfasdf to nobody
-        } elsif ($mc =~ /^([\w\-]+)\s+whispers\s+(.+?)\s+to\s+\-([\w\-]+)\s$/) {
+        } elsif ($mc =~ /^([\w\-]+)\s+whispers\s+(.+?)\s+to\s+\-([\w\-]+)\s*$/) {
           ($cmd_user, $cmd_name, $cmd_args) = ($1, $3, $2);
         # connection notices
         # Username [/1.2.3.4:5679] logged in with entity id 25
@@ -212,9 +213,10 @@ while (kill 0 => $server_pid) {
           console_exec('list');
         # connection lost notices
         # Username lost connection: Quitting
-        } elsif ($mc =~ /^([\w\-]+)\s+lost\s+connection\:\s*(.+?)\s*$/) {
-          my ($username, $reason) = ($1, $2);
-          irc_send($irc, "$username has disconnected: $reason") if $irc && player_is_human($username);
+        # Username left the game
+        } elsif ($mc =~ /^([\w\-]+)\s+left the game\s*$/) {
+          my ($username) = ($1);
+          irc_send($irc, "$username has disconnected") if $irc && player_is_human($username);
           if (exists $payments_pending{$username}) {
             my $bank_dir = "$server_properties{level_name}/players/tztk";
             mkdir $bank_dir unless -d $bank_dir;
@@ -277,6 +279,12 @@ while (kill 0 => $server_pid) {
             $want_snapshot = 0;
             snapshot_finish();
           }
+        # user tried to swim in lava
+        # user was slain by Slime
+        # "whispers" check should never trigger, but just in case
+        } elsif ($mc =~ /^([\w\-]+) / && $mc !~ /\bwhispers\b/ && $mc !~ /^([\w\-]+)\s+lost\s+connection\:/) {
+          my ($username) = ($1);
+          irc_send($irc, $mc) if $irc && (grep {$username eq $_} @players) && player_is_human($username);
         }
 
         if (defined $cmd_name && command_allowed($cmd_name)) {
