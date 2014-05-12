@@ -1,8 +1,10 @@
 Minecraft-Overviewer/
 banned-ips.txt
 banned-players.txt
+crash-reports/
 debug/
-minecraft_server.jar
+logs/
+minecraft_server*.jar
 ops.txt
 server.log*
 server.properties
