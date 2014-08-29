@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-die "usage: $0 version\n\nFor example,\n$0 1.7.2\n" unless @ARGV == 1 && $ARGV[0] =~ /^\d+(?:\.\d+)+$/;
+die "usage: $0 version\n\nFor example,\n$0 1.7.2\n" unless @ARGV == 1 && $ARGV[0] =~ /^\d+(?:\.\d+)+/;
 my $version = $ARGV[0];
 
 print "Previous hash: ";
