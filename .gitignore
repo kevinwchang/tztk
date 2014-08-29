@@ -3,6 +3,7 @@ banned-ips.txt
 banned-players.txt
 crash-reports/
 debug/
+eula.txt
 logs/
 minecraft_server*.jar
 ops.txt
