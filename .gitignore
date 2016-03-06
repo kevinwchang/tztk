@@ -15,3 +15,4 @@ tztk/snapshots
 white-list.*
 world*/
 *.json
+whitelist-notes.txt
