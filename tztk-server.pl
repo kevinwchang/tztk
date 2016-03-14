@@ -84,8 +84,8 @@ $server_properties{server_port} ||= 25565;
 print color(tztk => "Minecraft server appears to be at $server_properties{server_ip}:$server_properties{server_port}\n");
 
 # load waypoint authentication
-my %wpauth;
-if (-d "$tztk_dir/waypoint-auth") {
+  my %wpauth;
+  if (-d "$tztk_dir/waypoint-auth") {
   $wpauth{username} = cat("$tztk_dir/waypoint-auth/username");
   $wpauth{password} = cat("$tztk_dir/waypoint-auth/password");
   my $sessiondata = mcauth_startsession($wpauth{username}, $wpauth{password});
@@ -125,6 +125,8 @@ my $expect_userlist = 0;
 my $sel = new IO::Select(\*MCOUT, \*STDIN);
 $sel->add($irc->{socket}) if $irc;
 
+my $next_tick = 0;
+
 while (kill 0 => $server_pid) {
   foreach my $fh ($sel->can_read(1)) {
     if ($fh == \*STDIN) {
@@ -161,6 +163,7 @@ while (kill 0 => $server_pid) {
         # Done (1.174s)! For help, type "help" or "?"
         if ($mc =~ /^Done(?:\s*\([\w\.]+\))?\!\s*For\s+help\,\s*type\b/) {
           $server_ready = 1;
+          $next_tick = time;
           console_exec('list');
         # chat messages
         # <Username> Message text here
@@ -456,15 +459,22 @@ while (kill 0 => $server_pid) {
     }
   } #foreach readable fh
 
-  # snapshots
-  my $snapshot_period;
-  if ($snapshot_period = cat("$tztk_dir/snapshot-period")) {
-    if ($snapshot_period =~ /^\d+$/) {
-      mkdir $snapshotdir unless -d $snapshotdir;
-      if (!-e "$snapshotdir/latest" || time - (stat("$snapshotdir/latest"))[9] >= $snapshot_period) {
-        snapshot_begin();
+  if ($next_tick != 0 && time >= $next_tick) {
+    $next_tick += 60;
+
+    # snapshots
+    my $snapshot_period;
+    if ($snapshot_period = cat("$tztk_dir/snapshot-period")) {
+      if ($snapshot_period =~ /^\d+$/) {
+        mkdir $snapshotdir unless -d $snapshotdir;
+        if (!-e "$snapshotdir/latest" || time - (stat("$snapshotdir/latest"))[9] >= $snapshot_period) {
+          snapshot_begin();
+        }
       }
     }
+
+    # thunder
+    check_thunder();
   }
 } continue {
   # in case of unexpected catastrophic i/o errors, yield to prevent spinlock
@@ -710,6 +720,11 @@ sub http {
   return $res->is_success ? $res->decoded_content : "";
 }
 
+sub read_level {
+  my $file = "$server_properties{level_name}/level.dat";
+  return -e $file ? read_nbt($file) : undef;
+}
+
 sub read_player {
   my ($player) = @_;
   my $file = "$server_properties{level_name}/players/$player.dat";
@@ -882,4 +897,32 @@ sub take_items {
   }
 
   return 1;
+}
+
+sub check_thunder {
+  my $ttt = (time_to_thunder());
+  if (!defined $ttt) {
+    print color(warning => "Could not read thunderTime\n");
+    return;
+  }
+  if ($ttt < 1728000) { # 1 day, in ticks
+    if (clear_weather_time() < 3600) { # 1 hour, in seconds
+      print color(warning => "Thunder is potentially active! Forcing clear weather.\n");
+      console_exec('weather clear 1000000');
+    }
+  }
+}
+
+sub time_to_thunder {
+  my $level_nbt = read_level();
+  if ($level_nbt->{payload}{Data}{payload}{thundering}{payload}) {
+    return 0;
+  } else {
+    return $level_nbt->{payload}{Data}{payload}{thunderTime}{payload};
+  }
+}
+
+sub clear_weather_time {
+  my $level_nbt = read_level();
+  return $level_nbt->{payload}{Data}{payload}{clearWeatherTime}{payload};
 }
