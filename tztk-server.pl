@@ -17,7 +17,7 @@ use Encode;
 
 my $protocol_version = 0x16;
 my $client_version = 99;
-my $server_memory = "1536m";
+my $server_memory = "4G";
 
 # client init
 my %packet; %packet = (
@@ -113,7 +113,8 @@ if (-d "$tztk_dir/irc") {
 # start minecraft server
 my $server_pid = 0;
 $SIG{PIPE} = sub { print color(error => "SIGPIPE (\$?=$?, k0=".(kill 0 => $server_pid).", \$!=$!)\n"); };
-$server_pid = open2(\*MCOUT, \*MCIN, "java -Xincgc -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
+#$server_pid = open2(\*MCOUT, \*MCIN, "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
+$server_pid = open2(\*MCOUT, \*MCIN, "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -Xmx$server_memory -jar fabric-server-launch.jar 2>&1");
 MCOUT->blocking(0);
 print "Minecraft SMP Server launched with pid $server_pid\n";
 
@@ -274,7 +275,8 @@ while (kill 0 => $server_pid) {
           close PLAYERS;
         # snapshot save-complete trigger
         # CONSOLE: Save complete.
-        } elsif ($mc =~ /^(?:CONSOLE\:\s*Save\s+complete\.|Saved\s+the\s+world)\s*$/) {
+
+        } elsif ($mc =~ /^Saved the game$/) {
           if ($want_snapshot) {
             $want_snapshot = 0;
             snapshot_finish();
