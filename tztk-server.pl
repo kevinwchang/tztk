@@ -113,8 +113,8 @@ if (-d "$tztk_dir/irc") {
 # start minecraft server
 my $server_pid = 0;
 $SIG{PIPE} = sub { print color(error => "SIGPIPE (\$?=$?, k0=".(kill 0 => $server_pid).", \$!=$!)\n"); };
-#$server_pid = open2(\*MCOUT, \*MCIN, "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
-$server_pid = open2(\*MCOUT, \*MCIN, "/usr/lib/jvm/java-8-openjdk-amd64/bin/java -Xmx$server_memory -jar fabric-server-launch.jar 2>&1");
+#$server_pid = open2(\*MCOUT, \*MCIN, "/usr/lib/jvm/java-16-openjdk-amd64/bin/java -Xmx$server_memory -Xms$server_memory -jar minecraft_server.jar nogui 2>&1");
+$server_pid = open2(\*MCOUT, \*MCIN, "java -Xmx$server_memory -jar fabric-server-launch.jar 2>&1");
 MCOUT->blocking(0);
 print "Minecraft SMP Server launched with pid $server_pid\n";
 
