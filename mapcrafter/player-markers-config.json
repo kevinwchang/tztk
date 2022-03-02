@@ -1,0 +1,10 @@
+{
+    "api-url": "https://api.minetools.eu/uuid/",
+    "skin-url": "https://visage.surgeplay.com/frontfull/50/",
+    "skin-dir": "output/current/static/markers/",
+    "js-path": "output/current/player-markers.js",
+    "js-tmpl-path": "player-markers-tmpl.js",
+    "dat-dirs": [
+        "world/playerdata/"
+    ]
+}

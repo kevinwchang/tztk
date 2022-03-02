@@ -1,0 +1,10 @@
+#!/bin/bash
+if pgrep mapcrafter > /dev/null; then
+  echo "Mapcrafter already running?"
+  exit 1
+fi
+
+cd "$( dirname "$0" )"
+rsync -aL --delete ../world .
+mapcrafter -c render.conf -j 7
+~/go/bin/playerMarkers -c player-markers-config.json
