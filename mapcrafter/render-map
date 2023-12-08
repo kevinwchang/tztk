@@ -12,4 +12,4 @@ rsync -aL --delete ../world .
 
 keychain id_rsa
 . ~/.keychain/`uname -n`-sh
-rsync -acvz --files-from=rsync-include -e ssh output/current/ nfsipm:/home/public/maps/current/embed
+rsync -acrvz --files-from=rsync-include -e ssh output/current/ nfsipm:/home/public/maps/current/embed
