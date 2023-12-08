@@ -6,5 +6,10 @@ fi
 
 cd "$( dirname "$0" )"
 rsync -aL --delete ../world .
-mapcrafter -c render.conf -j 7
+/usr/local/bin/mapcrafter -c render.conf -j 7
 ~/go/bin/playerMarkers -c player-markers-config.json
+
+
+keychain id_rsa
+. ~/.keychain/`uname -n`-sh
+rsync -acvz --files-from=rsync-include -e ssh output/current/ nfsipm:/home/public/maps/current/embed
